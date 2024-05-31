@@ -26,15 +26,10 @@ local __current_run_status = false
 -- --------------------------------------------------------------------------
 
 function evaluate_check_run()
-  if __running_checks > 0 then
-    print(string.format("evaluate_check_run(): %d checks still running, skipping evaluation ...", __running_checks))
-  else
-    print("evaluate_check_run(): starting evaluation")
+  if __running_checks == 0 then
     -- first, current run status is last run status
-    print("checks done, evaluating")
     if __current_run_status == __vpn_active then
       -- actually, do nothing :)
-      print("VPN check - no change.")
     elseif __current_run_status == true then
       -- off -> on transition.
       -- the last one was NOT true, otherwise the first "if" would have caught
@@ -53,7 +48,6 @@ end
 
 
 function ping_callback(_, status, ...)
-  print(status, ...)
   if status == "receivedPacket" then
     __current_run_status = true
   end
@@ -67,7 +61,6 @@ end
 
 function check_ping(fqdn)
   -- https://www.hammerspoon.org/docs/hs.network.ping.html
-  print("check_ping(): ", fqdn)
   ping = hs.network.ping(fqdn, 1, 1, 0.5, "any", ping_callback)
 end
 
@@ -135,7 +128,6 @@ function _refresh()
 
   for idx, check_me in ipairs(obj.checkPing) do
     __running_checks = __running_checks + 1
-    print(string.format("refresh(): checking PING for '%s'", check_me))
     check_ping(check_me)
   end
 end
