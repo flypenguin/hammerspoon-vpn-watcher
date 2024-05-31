@@ -15,6 +15,8 @@ Configuration:
 ```lua
 hs.loadSpoon("VpnWatch")
 spoon.VpnWatch.checkPing = {"my.host-from-the.vpn","...",}
+-- if you want to, 3 will spam you, anything below won't do much
+-- spoon.VpnWatch.logLevel = 3
 spoon.VpnWatch:setupTimer()
 ```
 

@@ -30,29 +30,36 @@ function evaluate_check_run()
     -- first, current run status is last run status
     if __current_run_status == __vpn_active then
       -- actually, do nothing :)
+      if obj.logLevel > 2 then
+        print(string.format("[VpnWatch] VPN STATE: no change."))
+      end
     elseif __current_run_status == true then
       -- off -> on transition.
       -- the last one was NOT true, otherwise the first "if" would have caught
-      print("VPN check - VPN SWITCHED ON.")
-      __vpn_active = true
+      print(string.format("[VpnWatch] VPN STATE TRANSISION: OFF -> ON"))
       __set_vpn_on()
     else
       -- on -> off transition.
       -- same reason
-      print("VPN check - vpn switched off.")
-      __vpn_active = false
+      print(string.format("[VpnWatch] vpn state transition: on -> off"))
       __set_vpn_off()
     end
   end
 end
 
 
-function ping_callback(_, status, ...)
+function ping_callback(ping, status, ...)
+  if obj.logLevel > 1 then
+    print(string.format("[VpnWatch] ping '%s': got '%s'", ping:server(), status))
+  end
   if status == "receivedPacket" then
     __current_run_status = true
   end
   if status == "didFinish" or status == "didFail" then
     __running_checks = __running_checks - 1
+  end
+  if obj.logLevel > 2 then
+    print(string.format("[VpnWatch] check still running after this: %d", __running_checks))
   end
   evaluate_check_run()
 end
@@ -65,7 +72,9 @@ function check_ping(fqdn)
 end
 
 
-function __set_vpn_on()
+function __init_canvases()
+  __canvases = {}
+
   -- https://www.hammerspoon.org/docs/hs.screen.html#allScreens
   for idx, screen in ipairs(hs.screen.allScreens()) do
 
@@ -99,16 +108,20 @@ function __set_vpn_on()
 
     table.insert(__canvases, canvas)
   end
+end
 
+
+function __set_vpn_on()
   for idx, canvas in ipairs(__canvases) do
     canvas:show()
   end
+  __vpn_active = true
 end
 
 
 function __set_vpn_off()
   for idx, canvas in ipairs(__canvases) do
-    canvas:delete()
+    canvas:hide()
   end
   __vpn_active = false
 end
@@ -119,6 +132,9 @@ function _refresh()
   __current_run_status = false
   __running_checks = 0
 
+  if obj.logLevel > 2 then
+    print(string.format("[VpnWatch] refresh(): starting. current vpn status == %s", __vpn_active))
+  end
   for idx, check_me in ipairs({}) do -- self.checkConnect) do
     fqdn, port = string.gmatch(check_me, "([^:]+):([^:]+)")()
     port = tonumber(port)
@@ -128,6 +144,9 @@ function _refresh()
 
   for idx, check_me in ipairs(obj.checkPing) do
     __running_checks = __running_checks + 1
+    if obj.logLevel > 1 then
+      print(string.format("[VpnWatch] start PING check for %s", check_me))
+    end
     check_ping(check_me)
   end
 end
@@ -157,9 +176,9 @@ end
 function obj:init()
   self.checkPing = {}
   self.checkInterval = 10
-
+  self.logLevel = 0
   __vpn_active = false
-  __canvases = {}
+  __init_canvases()
   __set_vpn_off()
 
   return self
