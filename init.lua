@@ -51,8 +51,6 @@ function evaluate_check_run()
   end
 end
 
-function connect_callback(...)
-end
 
 function ping_callback(_, status, ...)
   print(status, ...)
@@ -65,18 +63,6 @@ function ping_callback(_, status, ...)
   evaluate_check_run()
 end
 
-function check_connect(fqdn, port)
-  print(string.format("Checking %s:%s", fqdn, port))
-  -- https://www.hammerspoon.org/docs/hs.socket.html
-  local socket = hs.socket.new()
-  socket:setTimeout(0.5)
-  socket:connect(fqdn, port)
-  if socket:connected() then
-    print("in VPN!!")
-  else
-    print("not in vpn :/")
-  end
-end
 
 
 function check_ping(fqdn)
@@ -96,8 +82,6 @@ function __set_vpn_on()
     -- convenience calculation
     ten_percent = rect.h / 10
 
-    -- create the text for the canvas. note that we assume 1pt==1px (which is, let's face it,
-    -- most probably horribly false)
     -- https://www.hammerspoon.org/docs/hs.styledtext.html
     text = hs.styledtext.new("VPN", {
         font = {name = "Arial Black", size = ten_percent * 3},
@@ -105,7 +89,6 @@ function __set_vpn_on()
         paragraphStyle = {alignment = "center"},
     })
 
-    -- create a new canvas
     -- https://www.hammerspoon.org/docs/hs.canvas.html
     canvas = hs.canvas.new({
         x = rect.x,
@@ -115,12 +98,6 @@ function __set_vpn_on()
     })
     canvas:alpha(0.2)
 
-    -- create a new _layer_ in the canvas (??)
-    -- canvas[1] = {
-    --     type = "rectangle",
-    --     action = "fill",
-    --     fillColor = {hex="#eeeeee"},
-    -- }
     canvas[1] = {
         type = "text",
         text = text,
@@ -150,12 +127,6 @@ function _refresh()
   __running_checks = 0
 
   for idx, check_me in ipairs({}) do -- self.checkConnect) do
-    -- http://lua-users.org/wiki/StringTrim
-    -- http://lua-users.org/wiki/SplitJoin
-    -- https://www.lua.org/manual/5.1/manual.html#5.4.1
-    -- https://www.lua.org/manual/5.4/manual.html#pdf-string.gmatch
-    -- QUOTE: "Returns an iterator function that, each time it is called,
-    --         returns the next captures from pattern [...]"
     fqdn, port = string.gmatch(check_me, "([^:]+):([^:]+)")()
     port = tonumber(port)
     __running_checks = __running_checks + 1
@@ -192,29 +163,13 @@ end
 
 
 function obj:init()
-  -- set those two from the outside on the object
-  self.checkConnect = {}
   self.checkPing = {}
   self.checkInterval = 10
 
-  -- internal variables, but not object-bound (i do not get so much of this stuff ...)
   __vpn_active = false
   __canvases = {}
   __set_vpn_off()
 
-  -- for config file reading, WHICH WE DON'T DO ANY MORE, too annoying.
-  -- https://stackoverflow.com/a/7617366/902327
-  -- should be "FQDN:PORT" in there
-  -- https://stackoverflow.com/a/11204889/902327
-  --local target_file_path = os.getenv("HOME") .. "/.vpnwatch.txt"
-  --local target_file = io.open(target_file_path, "rb")
-  --if target_file then
-  --  print(string.format("file '%s' loaded.", target_file_path))
-  --  content = target_file:read()
-  --  target_file:close()
-  --else
-  --  content = ""
-  --end
   return self
 end
 
